@@ -1,0 +1,100 @@
+import { Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
+import * as Mail from 'nodemailer/lib/mailer'
+import { createTransport } from 'nodemailer'
+import { InvitationDetails } from 'src/util/types'
+
+@Injectable()
+export class EmailService {
+  private readonly logger = new Logger(EmailService.name)
+  private nodemailerTransport
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {
+    this.nodemailerTransport = createTransport({
+      host: configService.get('EMAIL_HOST'),
+      port: 465,
+      secure: true,
+      auth: {
+        user: configService.get('EMAIL_USER'),
+        pass: configService.get('EMAIL_PASSWORD'),
+      },
+    })
+  }
+
+  async sendResetPasswordLink(email: string, userId: number): Promise<void> {
+    const payload = { email, userId }
+
+    const token = this.jwtService.sign(payload, {
+      secret: this.configService.get('JWT_VERIFICATION_TOKEN_SECRET'),
+      expiresIn: `${this.configService.get('JWT_VERIFICATION_TOKEN_EXPIRATION_TIME') || '900'}s`, // Default to 15 minutes
+    })
+
+    const url = `${this.configService.get('EMAIL_RESET_PASSWORD_URL')}?token=${token}`
+
+    const text = `Hi, \nTo reset your password, click here: ${url}`
+    const html = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset Request</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #FFD33D; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #4A3220;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 2px solid #000;">
+          <!-- Header -->
+          <div style="background-color: #FFD33D; padding: 40px 30px; text-align: center; border-bottom: 2px solid #000;">
+            <h1 style="color: #000; margin: 0; font-size: 28px; font-weight: 600;">Password Reset</h1>
+            <p style="color: #4A3220; margin: 10px 0 0 0; font-size: 16px;">Focus Flow Time Tracker</p>
+          </div>
+          <!-- Content -->
+          <div style="padding: 40px 30px;">
+            <p style="color: #4A3220; line-height: 1.6; margin: 0 0 25px 0; font-size: 16px;">
+              You requested a password reset for your Focus Flow account. Click the button below to create a new password.
+            </p>
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 35px 0;">
+              <a href="${url}" style="display: inline-block; background-color: #FF6FAE; color: #000; text-decoration: none; padding: 16px 32px; border-radius: 6px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(255,111,174,0.2); border: 2px solid #000;">
+                Reset Password
+              </a>
+            </div>
+            <div style="background-color: #FFD33D; border-left: 4px solid #FF6FAE; padding: 15px; margin: 30px 0; border-radius: 4px;">
+              <p style="color: #4A3220; margin: 0; font-size: 14px;">
+                ⚠️ <strong>Important:</strong> This link will expire in 15 minutes for security reasons.
+              </p>
+            </div>
+            <p style="color: #4A3220; line-height: 1.6; margin: 25px 0 0 0; font-size: 14px;">
+              If you didn't request this password reset, you can safely ignore this email. Your password will remain unchanged.
+            </p>
+          </div>
+          <!-- Footer -->
+          <div style="background-color: #FFD33D; padding: 25px 30px; text-align: center; border-top: 2px solid #000;">
+            <p style="color: #4A3220; margin: 0; font-size: 12px;">
+              © 2025 Focus Flow. All rights reserved.
+            </p>
+            <p style="color: #4A3220; margin: 5px 0 0 0; font-size: 12px;">
+              This is an automated message, please do not reply to this email.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+
+    return this.sendMail({
+      to: email,
+      subject: 'Reset password',
+      text,
+      html,
+    })
+  }
+
+  private sendMail(options: Mail.Options) {
+    this.logger.log('Email sent out to', options.to)
+    return this.nodemailerTransport.sendMail(options)
+  }
+}
