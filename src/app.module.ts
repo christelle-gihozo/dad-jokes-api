@@ -6,6 +6,8 @@ import { User } from './users/entities/user.entity'
 import { UsersModule } from './users/users.module'
 import { AuthModule } from './auth/auth.module'
 import { EmailModule } from './email/email.module'
+import { Joke } from './jokes/entities/joke.entity'
+import { JokesModule } from './jokes/jokes.module'
 @Module({
   imports: [
     AuthModule,
@@ -21,7 +23,7 @@ import { EmailModule } from './email/email.module'
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME,
-        entities: [User],
+        entities: [User, Joke],
         synchronize: true,
 
         ssl:
@@ -32,6 +34,7 @@ import { EmailModule } from './email/email.module'
     }),
     UsersModule,
     EmailModule,
+    JokesModule,
   ],
 })
 export class AppModule {}
