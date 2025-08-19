@@ -5,7 +5,7 @@ import { LoginUserDto } from './dto/login-user.dto'
 import { CreateUserDto } from 'src/users/dto/create-user.dto'
 import { ForgotPasswordDto } from './dto/forgot-password-dto'
 import { ResetPasswordDto } from './dto/reset-passoword-dto'
-import { UserRole } from '../util/role.enum'
+import { UserRole } from '../util/enums'
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
@@ -25,7 +25,7 @@ export class AuthController {
           fullName: 'Jackson Eric',
           email: 'jackson@gmail.com',
           roles: UserRole.USER,
-          timeZone: 'Africa/Kigali',
+          language: 'en',
         },
         access_token:
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImphY2tzb25AZ21haWwuY29tIiwicm9sZSI6IkFkbWluIiwiaWQiOjMsImlhdCI6MTc0MTE4MTcyMSwiZXhwIjoxNzQxMTg1MzIxfQ.28Kz5VQUkLkD-P5LLPUUID0YahXYnHJS30HkwfQZXEA',
@@ -53,7 +53,7 @@ export class AuthController {
           fullName: 'Christelle Gihozo',
           email: 'christelle@gmail.com',
           roles: UserRole.ADMIN,
-          timeZone: 'Africa/Kigali',
+          language: 'en',
         },
       },
     },

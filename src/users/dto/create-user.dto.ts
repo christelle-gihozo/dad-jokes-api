@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator'
+import { IsEmail, IsNotEmpty, MinLength, IsEnum } from 'class-validator'
+import { Language } from 'src/util/enums'
 
 export class CreateUserDto {
   @ApiProperty({
@@ -26,9 +27,10 @@ export class CreateUserDto {
   password: string
 
   @ApiProperty({
-    example: 'Africa/Kigali',
+    example: 'en',
+    enum: ['en', 'es', 'fr'],
     required: true,
   })
-  @IsString()
-  timeZone: string
+  @IsEnum(Language)
+  language: Language
 }

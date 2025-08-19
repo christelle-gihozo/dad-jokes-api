@@ -12,7 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { LoginUserDto } from './dto/login-user.dto'
 import { CreateUserDto } from 'src/users/dto/create-user.dto'
-import { UserRole } from 'src/util/role.enum'
+import { UserRole } from 'src/util/enums'
 import { ForgotPasswordDto } from './dto/forgot-password-dto'
 import { EmailService } from 'src/email/email.service'
 import { ResetPasswordDto } from './dto/reset-passoword-dto'
@@ -61,7 +61,7 @@ export class AuthService {
       role: user?.roles,
       id: user?.id,
       fullName: user?.fullName,
-      timeZone: user?.timeZone,
+      language: user?.language,
     }
 
     return {
@@ -85,12 +85,10 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10)
-    const timeZone = createUserDto.timeZone || 'UTC'
     const newUser = this.userRepository.create({
       ...createUserDto,
       roles: role,
       password: hashedPassword,
-      timeZone,
     })
 
     const savedUser = await this.userRepository.save(newUser)
