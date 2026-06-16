@@ -1,0 +1,71 @@
+name: Weekly Joke Contribution
+
+on:
+  schedule:
+    - cron: '0 12 * * 1-5'  # Runs Mon–Fri at noon; random day logic is handled in the script
+
+jobs:
+  make-contribution:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git user
+        run: |
+          git config --global user.email "christellegihozo23@gmail.com"
+          git config --global user.name "Gihozo23"
+
+      - name: Maybe add a joke (random day ~once/week)
+        id: joke_step
+        run: |
+          # ~1 in 5 chance → roughly once per week across Mon–Fri runs
+          ROLL=$(( RANDOM % 5 ))
+          echo "Rolled: $ROLL"
+          if [ "$ROLL" -ne 0 ]; then
+            echo "Not today. Skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+          # Fetch a dad joke from the free public API
+          JOKE=$(curl -sf -H "Accept: text/plain" https://icanhazdadjoke.com)
+          if [ -z "$JOKE" ]; then
+            # Fallback if the API is unavailable
+            echo "$(date): API unavailable — still committed to this project 😄" >> README.md
+          else
+            echo "" >> README.md
+            echo "<!-- joke:$(date +%Y-%m-%d) -->" >> README.md
+            echo "> 🃏 **Dad Joke of the Week ($(date +%B %d, %Y)):** $JOKE" >> README.md
+          fi
+
+      - name: Commit changes
+        if: steps.joke_step.outputs.skip == 'false'
+        uses: EndBug/add-and-commit@v7
+        with:
+          author_name: "Gihozo23"
+          author_email: "christellegihozo23@gmail.com"
+          message: "Weekly dad joke contribution"
+          add: "README.md"
+
+      - name: Push changes
+        if: steps.joke_step.outputs.skip == 'false'
+        uses: ad-m/github-push-action@master
+        with:
+          branch: daily-contribution
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Open pull request
+        if: steps.joke_step.outputs.skip == 'false'
+        uses: peter-evans/create-pull-request@v3
+        with:
+          title: "Weekly Dad Joke 🃏"
+          commit-message: "Weekly dad joke contribution"
+          branch: daily-contribution
+          base: main
+          body: "This PR adds this week's dad joke to the README, courtesy of [icanhazdadjoke.com](https://icanhazdadjoke.com)."
+          token: ${{ secrets.GITHUB_TOKEN }}
